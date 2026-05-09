@@ -9,14 +9,14 @@ export const getSettings = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const updateSetting = asyncHandler(async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id as string);
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id);
   const setting = await settingsService.updateSetting(id, req.body);
   return res.json(apiResponse.success(setting, 'Setting updated successfully'));
 });
 
 export const getSettingByKey = asyncHandler(async (req: Request, res: Response) => {
   const { key } = req.params;
-  const setting = await settingsService.getSettingByKey(key);
+  const setting = await settingsService.getSettingByKey(key as string);
   if (!setting) {
     return res.status(404).json(apiResponse.notFound('Setting not found'));
   }
