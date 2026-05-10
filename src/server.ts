@@ -15,7 +15,8 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3005;
 const isProduction = process.env.NODE_ENV === 'production';
-const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+// Vercel sets VERCEL=1 by default, but we also check for the presence of the variable
+const isVercel = !!process.env.VERCEL || process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 
 app.use(helmet());
 app.use(cors({
@@ -29,8 +30,14 @@ app.use(cookieParser());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/health', async (req, res) => {
+  try {
+    // Test database connection
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+  } catch (error) {
+    res.status(500).json({ status: 'error', database: 'disconnected', error: String(error) });
+  }
 });
 
 app.use('/api/v1', mainRoutes);
@@ -69,7 +76,9 @@ if (!isVercel) {
 
 // For serverless: connect Prisma on cold start
 if (isVercel) {
-  prisma.$connect().catch(console.error);
+  prisma.$connect().catch(err => {
+    console.error('Prisma connection error:', err);
+  });
 }
 
 export default app;

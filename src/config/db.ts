@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 // For serverless environments, we need to handle connection pooling carefully
-const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+const isVercel = !!process.env.VERCEL || process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Create a global prisma instance to avoid creating multiple connections
