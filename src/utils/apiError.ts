@@ -1,6 +1,14 @@
 /**
  * Custom API Error class for handling HTTP errors
  */
+
+// Extend ErrorConstructor interface for V8's captureStackTrace
+declare global {
+  interface ErrorConstructor {
+    captureStackTrace(errorInstance: Error, constructorOpt?: Function): void;
+  }
+}
+
 class ApiError extends Error {
   public statusCode: number;
   public isOperational: boolean;
@@ -19,7 +27,10 @@ class ApiError extends Error {
     this.name = this.constructor.name;
 
     Object.setPrototypeOf(this, new.target.prototype);
-    Error.captureStackTrace(this);
+    // V8-specific: capture stack trace (only available in V8 environments like Node.js)
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
   }
 
   /**
