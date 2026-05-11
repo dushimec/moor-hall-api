@@ -4,23 +4,45 @@ import { PrismaClient } from '@prisma/client';
 const isVercel = !!process.env.VERCEL || process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Create a global prisma instance to avoid creating multiple connections
-let prisma: PrismaClient;
+const createClient = () => {
+  const logs = (isVercel || isProduction) ? ['error'] : ['query', 'error', 'warn'];
+  return new PrismaClient({ log: logs as any });
+};
 
-// In serverless environments, it's recommended to use a connection string with pool settings
-// Example: postgresql://.../?connection_limit=1&pool_timeout=0
-// Or set DATABASE_URL with appropriate parameters for your database provider
+let _prisma: PrismaClient | null = null;
 
-if (isVercel || isProduction) {
-  // In serverless/production, use minimal logging
-  prisma = new PrismaClient({
-    log: ['error'],
-  });
-} else {
-  // In development, use default settings with query logging
-  prisma = new PrismaClient({
-    log: ['query', 'error', 'warn'],
-  });
+function initPrisma(): PrismaClient {
+  if (_prisma) return _prisma;
+
+  if (!process.env.DATABASE_URL) {
+    throw new Error('Environment variable DATABASE_URL is not set');
+  }
+
+  _prisma = createClient();
+  return _prisma;
 }
 
-export default prisma;
+// Export a proxy that lazy-initializes the Prisma client on first use.
+// This prevents import-time crashes in serverless platforms when DATABASE_URL
+// is not configured while still allowing code to access Prisma transparently.
+const prismaProxy = new Proxy(
+  {},
+  {
+    get(_target, prop: string | symbol) {
+      const client = initPrisma();
+      const value = (client as any)[prop];
+      if (typeof value === 'function') return value.bind(client);
+      return value;
+    },
+    apply(_target, thisArg, argsList) {
+      const client = initPrisma();
+      return (client as any).apply(thisArg, argsList);
+    },
+    construct(_target, argsList) {
+      const client = initPrisma();
+      return new (client as any)(...argsList);
+    },
+  }
+) as unknown as PrismaClient;
+
+export default prismaProxy;

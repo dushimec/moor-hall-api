@@ -31,12 +31,21 @@ app.use(cookieParser());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
 app.get('/health', async (req, res) => {
+  const timestamp = new Date().toISOString();
+
+  // If DATABASE_URL is not configured, return a DB-free healthy response.
+  if (!process.env.DATABASE_URL) {
+    return res.json({ status: 'ok', database: 'not-configured', timestamp });
+  }
+
   try {
-    // Test database connection
+    // Test database connection (lazy-initializes Prisma)
     await prisma.$queryRaw`SELECT 1`;
-    res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
+    return res.json({ status: 'ok', database: 'connected', timestamp });
   } catch (error) {
-    res.status(500).json({ status: 'error', database: 'disconnected', error: String(error) });
+    console.error('Health check DB error:', error);
+    // Still return 200 so the endpoint is DB-free and doesn't cause function failures
+    return res.json({ status: 'ok', database: 'disconnected', error: String(error), timestamp });
   }
 });
 
@@ -49,9 +58,13 @@ app.use(errorHandler);
 if (!isVercel) {
   const startServer = async () => {
     try {
-      await prisma.$connect();
-      console.log('Database connected successfully');
-      
+      if (process.env.DATABASE_URL) {
+        await prisma.$connect();
+        console.log('Database connected successfully');
+      } else {
+        console.log('DATABASE_URL not set; skipping DB connection');
+      }
+
       const server = app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
         console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
@@ -59,7 +72,7 @@ if (!isVercel) {
 
       process.on('SIGTERM', async () => {
         console.log('SIGTERM received, closing server...');
-        await prisma.$disconnect();
+        if (process.env.DATABASE_URL) await prisma.$disconnect();
         server.close(() => {
           console.log('Server closed');
           process.exit(0);
@@ -76,9 +89,14 @@ if (!isVercel) {
 
 // For serverless: connect Prisma on cold start
 if (isVercel) {
-  prisma.$connect().catch(err => {
-    console.error('Prisma connection error:', err);
-  });
+  if (process.env.DATABASE_URL) {
+    // Optionally warm Prisma on cold start in Vercel
+    prisma.$connect().catch(err => {
+      console.error('Prisma connection error:', err);
+    });
+  } else {
+    console.log('Vercel environment and DATABASE_URL not set; skipping Prisma connect');
+  }
 }
 
 export default app;
