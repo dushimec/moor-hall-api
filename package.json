@@ -1,8 +1,11 @@
 {
   "name": "moor-hall-api",
   "version": "1.0.0",
+  "engines": {
+    "node": "20.x"
+  },
   "description": "",
-  "main": "index.js",
+  "main": "server.ts",
   "scripts": {
     "dev": "nodemon",
     "build": "tsc",

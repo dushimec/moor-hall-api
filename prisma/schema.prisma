@@ -223,6 +223,7 @@ model CateringRequest {
   id                Int            @id @default(autoincrement())
   customerName      String
   phoneNumber       String
+  email             String?
   eventType         String
   eventLocation     String
   guestCount        Int
