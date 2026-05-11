@@ -14,9 +14,6 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3005;
-const isProduction = process.env.NODE_ENV === 'production';
-// Vercel sets VERCEL=1 by default, but we also check for the presence of the variable
-const isVercel = !!process.env.VERCEL || process.env.VERCEL === '1' || process.env.VERCEL === 'true';
 
 app.use(helmet());
 app.use(cors({
@@ -54,49 +51,35 @@ app.use('/api/v1', mainRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Only start the server if not running in serverless environment
-if (!isVercel) {
-  const startServer = async () => {
-    try {
-      if (process.env.DATABASE_URL) {
-        await prisma.$connect();
-        console.log('Database connected successfully');
-      } else {
-        console.log('DATABASE_URL not set; skipping DB connection');
-      }
-
-      const server = app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-        console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
-      });
-
-      process.on('SIGTERM', async () => {
-        console.log('SIGTERM received, closing server...');
-        if (process.env.DATABASE_URL) await prisma.$disconnect();
-        server.close(() => {
-          console.log('Server closed');
-          process.exit(0);
-        });
-      });
-    } catch (error) {
-      console.error('Failed to start server:', error);
-      process.exit(1);
+// Start the server
+const startServer = async () => {
+  try {
+    if (process.env.DATABASE_URL) {
+      await prisma.$connect();
+      console.log('Database connected successfully');
+    } else {
+      console.log('DATABASE_URL not set; skipping DB connection');
     }
-  };
 
-  startServer();
-}
-
-// For serverless: connect Prisma on cold start
-if (isVercel) {
-  if (process.env.DATABASE_URL) {
-    // Optionally warm Prisma on cold start in Vercel
-    prisma.$connect().catch(err => {
-      console.error('Prisma connection error:', err);
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
     });
-  } else {
-    console.log('Vercel environment and DATABASE_URL not set; skipping Prisma connect');
+
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received, closing server...');
+      if (process.env.DATABASE_URL) await prisma.$disconnect();
+      server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+      });
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
   }
-}
+};
+
+startServer();
 
 export default app;

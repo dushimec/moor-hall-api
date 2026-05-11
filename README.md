@@ -25,14 +25,14 @@ Backend API for the Moor Hall restaurant management system, built with Express.j
 - **File Storage**: Cloudinary
 - **Payments**: Stripe
 - **Messaging**: Twilio, Pindo, WhatsApp Cloud API
-- **Deployment**: Vercel Serverless Functions
+- **Deployment**: Render
 
 ## Project Structure
 
 ```
 moor-hall-api/
-├── api/              # Vercel serverless entry point
-│   └── index.ts      # Serverless function handler
+├── api/              # API entry point
+│   └── index.ts      # Express app handler
 ├── src/
 │   ├── config/      # Configuration (db, swagger)
 │   ├── controllers/ # Request handlers
@@ -44,7 +44,7 @@ moor-hall-api/
 │   └── server.ts    # Express app configuration
 ├── prisma/          # Database schema & migrations
 ├── .env             # Local environment variables
-├── vercel.json      # Vercel deployment config
+├── render.yaml      # Render deployment config
 └── package.json
 ```
 
@@ -146,31 +146,29 @@ See `.env.production.example` for all available configuration options.
 Swagger documentation is automatically generated from JSDoc comments.
 
 - **Local**: http://localhost:3005/api-docs
-- **Production**: `https://your-api.vercel.app/api-docs`
+- **Production**: `https://your-api.onrender.com/api-docs`
 
 ## Production Deployment
 
-### Vercel Deployment
+### Render Deployment
 
-This API is configured for deployment on Vercel serverless functions.
+This API is configured for deployment on Render.
 
 **Quick deploy**:
 ```bash
 cd moor-hall-api
-vercel --prod
+git push origin main
 ```
+
+Render will automatically detect the `render.yaml` configuration and deploy.
 
 **Prerequisites**:
 - Cloud PostgreSQL database (Neon, Supabase, Railway, etc.)
-- All required environment variables set in Vercel dashboard
-
-**Detailed guide**: See [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md)
-
-**Pre-deployment checklist**: See [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
+- All required environment variables set in Render dashboard
 
 ### Environment Variables for Production
 
-Set these in Vercel dashboard (Settings → Environment Variables):
+Set these in Render dashboard (Environment → Environment Variables):
 
 **Required**:
 - `DATABASE_URL`
@@ -184,33 +182,14 @@ Set these in Vercel dashboard (Settings → Environment Variables):
 
 ### Database Migrations on Production
 
-After deployment, run migrations:
-
-```bash
-# Option 1: Via Vercel CLI
-vercel env pull .env.production
-npx prisma migrate deploy
-
-# Option 2: Via Vercel Console (one-off function)
-# Run: npx prisma migrate deploy
-```
+Migrations are automatically run during deployment via the `render.yaml` configuration.
 
 ## Architecture
 
 ### Server Modes
 
-The server supports two modes:
-
-1. **Standalone** (development): Starts HTTP server on specified port
-2. **Serverless** (Vercel): Exports Express app as handler for serverless functions
-
-Mode is automatically detected via `VERCEL` environment variable.
-
-### Request Flow
-
-```
-Client → Vercel Edge → Serverless Function → Express App → Middlewares → Routes → Controllers → Prisma → Database
-```
+The server supports standalone mode (development and production):
+- Starts HTTP server on specified port
 
 ### Middlewares
 
@@ -228,7 +207,7 @@ Client → Vercel Edge → Serverless Function → Express App → Middlewares �
 ### Database Connection
 
 - **Development**: Direct connection with query logging
-- **Production/Serverless**: Optimized for connection pooling
+- **Production**: Optimized for connection pooling
   - Uses global PrismaClient instance
   - Minimal logging
   - Connection pool size managed via DATABASE_URL params
@@ -278,14 +257,12 @@ Client → Vercel Edge → Serverless Function → Express App → Middlewares �
 
 ## Performance
 
-- **Serverless**: Auto-scaling, pay-per-use
 - **Database**: Connection pooling (PgBouncer recommended for high traffic)
 - **Caching**: Consider Redis for sessions and frequently accessed data
-- **CDN**: Vercel Edge Network for static assets
 
 ## Monitoring
 
-- **Vercel Logs**: View in dashboard or via CLI (`vercel logs`)
+- **Render Logs**: View in dashboard
 - **Database**: Use Prisma Studio or database GUI
 - **Error Tracking**: Integrate Sentry, LogRocket, etc. (optional)
 
@@ -296,21 +273,16 @@ Client → Vercel Edge → Serverless Function → Express App → Middlewares �
 1. **Database connection fails**
    - Check DATABASE_URL is correct
    - Ensure database is running and accessible
-   - For Vercel: whitelist Vercel IPs or use public connection
+   - Use public connection or whitelist Render IPs
 
 2. **Prisma client not found**
    - Run `npm run db:generate`
    - Ensure `@prisma/client` is in dependencies
 
-3. **Build fails on Vercel**
-   - Check all env vars are set in Vercel dashboard
+3. **Build fails on Render**
+   - Check all env vars are set in Render dashboard
    - Ensure postinstall script runs successfully
-   - View build logs in Vercel dashboard
-
-4. **Cold start slow**
-   - Normal for serverless (1-3 seconds)
-   - Consider Vercel Pro for faster cold starts
-   - Keep functions warm with scheduled pings (optional)
+   - View build logs in Render dashboard
 
 ## Contributing
 
@@ -326,5 +298,4 @@ ISC
 
 ## Support
 
-For deployment issues, see [VERCEL_DEPLOY.md](./VERCEL_DEPLOY.md).
 For questions, contact the development team.

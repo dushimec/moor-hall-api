@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: moor-hall-api
+    runtime: node
+    buildCommand: npm run build
+    startCommand: npm run db:prod && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    autoDeploy: true
