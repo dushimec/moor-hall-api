@@ -4,7 +4,6 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "lib": ["ES2022"],
-    "types": ["node", "@types/express", "@types/swagger-jsdoc", "@types/swagger-ui-express", "@types/jsonwebtoken", "@types/cors", "@types/cookie-parser", "@types/morgan", "@types/compression"],
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
