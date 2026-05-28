@@ -1,4 +1,4 @@
-import nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 import transporterManager from '../config/transporter.config';
 import {
   EmailOptions,

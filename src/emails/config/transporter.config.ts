@@ -1,4 +1,4 @@
-import nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 import ApiError from '../../utils/apiError';
 import { EmailProviderConfig, EmailProvider, EmailProviderHealth } from '../types/email.types';
 
