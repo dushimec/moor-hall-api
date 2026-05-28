@@ -39,3 +39,6 @@ const startServer = async () => {
 if (!process.env.VERCEL) {
   startServer();
 }
+
+// Export app for Vercel serverless functions
+export default app;
