@@ -14,14 +14,14 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  let error = err;
   let statusCode = 500;
   let message = 'Internal server error';
+  let errors: unknown[] | undefined;
 
   if (err instanceof ApiError) {
     statusCode = err.statusCode;
     message = err.message;
-    error = err;
+    errors = err.errors;
   } else if (err.name === 'PrismaClientKnownRequestError') {
     statusCode = 400;
     message = 'Database operation failed';
@@ -31,9 +31,21 @@ export const errorHandler = (
   } else if (err.name === 'ValidationError') {
     statusCode = 400;
     message = err.message;
+  } else if (err instanceof SyntaxError) {
+    statusCode = 400;
+    message = 'Invalid JSON payload';
   }
 
-  const response = apiResponse.badRequest(message, error.errors);
+  const response =
+    statusCode >= 500
+      ? apiResponse.internal(message)
+      : statusCode === 404
+        ? apiResponse.notFound(message)
+        : statusCode === 401
+          ? apiResponse.unauthorized(message)
+          : statusCode === 403
+            ? apiResponse.forbidden(message)
+            : apiResponse.badRequest(message, errors);
 
   res.status(statusCode).json(response);
 };

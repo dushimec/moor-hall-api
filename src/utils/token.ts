@@ -14,7 +14,7 @@ const generateAccessToken = (payload: TokenPayload, secret: string, expiresIn = 
   return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
 };
 
-const generateRefreshToken = (payload: TokenPayload, secret: string, expiresIn = '7d'): string => {
+const generateRefreshToken = (payload: TokenPayload, secret: string, expiresIn = '30d'): string => {
   return jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
 };
 

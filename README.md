@@ -66,7 +66,7 @@ moor-hall-api/
 
 2. **Set up environment variables**:
    ```bash
-   cp .env .env
+   cp .env.example .env
    # Edit .env with your configuration
    ```
 
@@ -120,7 +120,7 @@ moor-hall-api/
 
 ### Environment Variables
 
-See `.env.production.example` for all available configuration options.
+See `.env.example` for all available configuration options.
 
 **Key variables**:
 

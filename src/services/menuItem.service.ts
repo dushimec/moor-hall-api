@@ -1,6 +1,28 @@
 import prisma from '../config/db';
 import ApiError from '../utils/apiError';
 
+/** Normalize a MenuItem returned by Prisma for API responses
+ * - Convert Decimal price to number
+ * - Ensure `images` is an array
+ * - Prefer `imageUrl` as the image field
+ */
+function normalizeMenuItem(item: any) {
+  if (!item) return item;
+
+  const price = item.price !== undefined && item.price !== null
+    ? (typeof item.price === 'object' && typeof item.price.toString === 'function'
+        ? parseFloat(item.price.toString())
+        : Number(item.price))
+    : item.price;
+
+  return {
+    ...item,
+    price,
+    images: Array.isArray(item.images) ? item.images : (item.images ?? []),
+    imageUrl: item.imageUrl ?? item.image ?? undefined,
+  };
+}
+
 export async function createMenuItem(data: {
   name: string;
   slug: string;
@@ -10,6 +32,7 @@ export async function createMenuItem(data: {
   productType: string;
   price: number;
   imageUrl?: string;
+  images?: string[];
   preparationTime?: number;
   sku?: string;
 }) {
@@ -40,16 +63,17 @@ export async function createMenuItem(data: {
       productType: data.productType as any,
       price: data.price,
       imageUrl: data.imageUrl,
+      images: data.images,
       preparationTime: data.preparationTime,
       sku: data.sku,
     },
   });
 
-  return menuItem;
+  return normalizeMenuItem(menuItem);
 }
 
 export async function getMenuItems(categoryId?: number, includeUnavailable = false) {
-  return prisma.menuItem.findMany({
+  const items = await prisma.menuItem.findMany({
     where: {
       ...(categoryId ? { categoryId } : {}),
       ...(includeUnavailable ? {} : { isAvailable: true }),
@@ -57,6 +81,8 @@ export async function getMenuItems(categoryId?: number, includeUnavailable = fal
     include: { category: true },
     orderBy: { name: 'asc' },
   });
+
+  return items.map(normalizeMenuItem);
 }
 
 export async function getMenuItemById(id: number) {
@@ -67,7 +93,7 @@ export async function getMenuItemById(id: number) {
   if (!menuItem) {
     throw ApiError.notFound('Menu item not found');
   }
-  return menuItem;
+  return normalizeMenuItem(menuItem);
 }
 
 export async function updateMenuItem(id: number, data: {
@@ -76,6 +102,7 @@ export async function updateMenuItem(id: number, data: {
   description?: string;
   price?: number;
   imageUrl?: string;
+  images?: string[];
   isAvailable?: boolean;
   isFeatured?: boolean;
   preparationTime?: number;
@@ -93,7 +120,7 @@ export async function updateMenuItem(id: number, data: {
     }
   }
 
-  return prisma.menuItem.update({
+  const updated = await prisma.menuItem.update({
     where: { id },
     data: {
       name: data.name || menuItem.name,
@@ -101,12 +128,15 @@ export async function updateMenuItem(id: number, data: {
       description: data.description !== undefined ? data.description : menuItem.description,
       price: data.price !== undefined ? data.price : menuItem.price,
       imageUrl: data.imageUrl !== undefined ? data.imageUrl : menuItem.imageUrl,
+      images: data.images !== undefined ? data.images : menuItem.images,
       isAvailable: data.isAvailable !== undefined ? data.isAvailable : menuItem.isAvailable,
       isFeatured: data.isFeatured !== undefined ? data.isFeatured : menuItem.isFeatured,
       preparationTime: data.preparationTime !== undefined ? data.preparationTime : menuItem.preparationTime,
       categoryId: data.categoryId || menuItem.categoryId,
     },
   });
+
+  return normalizeMenuItem(updated);
 }
 
 export async function toggleAvailability(id: number) {
@@ -115,10 +145,12 @@ export async function toggleAvailability(id: number) {
     throw ApiError.notFound('Menu item not found');
   }
 
-  return prisma.menuItem.update({
+  const updated = await prisma.menuItem.update({
     where: { id },
     data: { isAvailable: !menuItem.isAvailable },
   });
+
+  return normalizeMenuItem(updated);
 }
 
 export async function deleteMenuItem(id: number) {
@@ -130,4 +162,31 @@ export async function deleteMenuItem(id: number) {
   await prisma.menuItem.delete({ where: { id } });
 }
 
-export default { createMenuItem, getMenuItems, getMenuItemById, updateMenuItem, toggleAvailability, deleteMenuItem };
+// ─── Public service methods (no auth required) ─────────────────────────────────
+
+export async function getPublicMenuItems(categoryId?: number, productType?: string) {
+  const items = await prisma.menuItem.findMany({
+    where: {
+      ...(categoryId ? { categoryId } : {}),
+      ...(productType ? { productType: productType as any } : {}),
+      isAvailable: true,
+    },
+    include: { category: true },
+    orderBy: { name: 'asc' },
+  });
+
+  return items.map(normalizeMenuItem);
+}
+
+export async function getPublicMenuItemById(id: number) {
+  const menuItem = await prisma.menuItem.findUnique({
+    where: { id },
+    include: { category: true },
+  });
+  if (!menuItem) {
+    throw ApiError.notFound('Menu item not found');
+  }
+  return normalizeMenuItem(menuItem);
+}
+
+export default { createMenuItem, getMenuItems, getMenuItemById, updateMenuItem, toggleAvailability, deleteMenuItem, getPublicMenuItems, getPublicMenuItemById };

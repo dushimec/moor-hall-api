@@ -4,19 +4,25 @@ import apiResponse from '../utils/apiResponse';
 import asyncHandler from '../utils/asyncHandler';
 import { registerSchema, loginSchema, changePasswordSchema, refreshTokenSchema, updateProfileSchema, forgotPasswordSchema, resetPasswordSchema } from '../types/auth.types';
 
-const setAuthCookies = (res: Response, refreshToken: string) => {
+const setAuthCookies = (res: Response, accessToken: string, refreshToken: string, rememberMe: boolean = false) => {
   const isProduction = process.env.NODE_ENV === 'production';
+  // 30 days for rememberMe, 14 days (2 weeks) otherwise
+  const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 14 * 24 * 60 * 60 * 1000;
+  
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'strict' as const : 'lax' as const,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge,
   };
 
+  // Store both tokens in cookies for auto-login
+  res.cookie('accessToken', accessToken, cookieOptions);
   res.cookie('refreshToken', refreshToken, cookieOptions);
 };
 
 const clearAuthCookies = (res: Response) => {
+  res.clearCookie('accessToken');
   res.clearCookie('refreshToken');
 };
 
@@ -33,10 +39,9 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 
   const result = await authService.register(validation.data);
 
-  setAuthCookies(res, result.tokens.refreshToken);
-
+  // Return tokens in response for frontend storage
   res.status(201).json(apiResponse.created(
-    { admin: result.admin, token: result.tokens.accessToken },
+    { admin: result.admin, token: result.tokens.accessToken, refreshToken: result.tokens.refreshToken },
     'Registration successful'
   ));
 });
@@ -54,10 +59,11 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   const result = await authService.login(validation.data);
 
-  setAuthCookies(res, result.tokens.refreshToken);
+  // Store tokens in cookies for auto-login (30 days if rememberMe, 14 days otherwise)
+   setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken, validation.data.rememberMe);
 
   res.status(200).json(apiResponse.success(
-    { admin: result.admin, token: result.tokens.accessToken },
+    { admin: result.admin, token: result.tokens.accessToken, refreshToken: result.tokens.refreshToken },
     'Login successful'
   ));
 });
@@ -77,7 +83,8 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
 
   const tokens = await authService.refresh(refreshToken);
 
-  setAuthCookies(res, tokens.refreshToken);
+  // Store both tokens in cookies for 1 month auto-login
+  setAuthCookies(res, tokens.accessToken, tokens.refreshToken, true);
 
   res.status(200).json(apiResponse.success(tokens, 'Token refreshed successfully'));
 });

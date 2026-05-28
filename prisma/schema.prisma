@@ -59,6 +59,7 @@ model MenuItem {
   productType      ProductType
   price            Decimal     @db.Decimal(10, 2)
   imageUrl         String?
+  images           Json?       // Array of additional image URLs
   isAvailable      Boolean     @default(true)
   isFeatured       Boolean     @default(false)
   preparationTime  Int?

@@ -3,6 +3,21 @@ import reservationService from '../services/reservation.service';
 import apiResponse from '../utils/apiResponse';
 import asyncHandler from '../utils/asyncHandler';
 
+export const createGuestReservation = asyncHandler(async (req: Request, res: Response) => {
+  const { name, phone, date, time, guests, notes } = req.body;
+  
+  const reservation = await reservationService.createReservation({
+    customerName: name,
+    phoneNumber: phone,
+    reservationDate: date,
+    reservationTime: time,
+    guestCount: guests,
+    notes,
+  });
+  
+  return res.status(201).json(apiResponse.created(reservation, 'Reservation created successfully'));
+});
+
 export const getReservations = asyncHandler(async (req: Request, res: Response) => {
   const status = req.query.status as string | undefined;
   const page = req.query.page ? parseInt(req.query.page as string) : undefined;
@@ -45,6 +60,7 @@ export const deleteReservation = asyncHandler(async (req: Request, res: Response
 });
 
 export default {
+  createGuestReservation,
   getReservations,
   getReservationById,
   updateReservationStatus,

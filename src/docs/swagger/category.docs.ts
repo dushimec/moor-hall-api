@@ -15,6 +15,7 @@ const categoryDocs = {
               description: { type: 'string' },
               type: { type: 'string', enum: ['FOOD', 'COFFEE', 'DRINK', 'BAKERY', 'SPECIAL'] },
               displayOrder: { type: 'integer' },
+              isActive: { type: 'boolean' },
             },
           },
         },

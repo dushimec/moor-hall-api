@@ -1,85 +1,119 @@
+// 1️⃣ Load dotenv immediately
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
-import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import mainRoutes from './routes/index';
 import { errorHandler, notFoundHandler } from './middlewares/error.middleware';
 import swaggerSpecs from './config/swagger';
 import prisma from './config/db';
-
-dotenv.config();
+import transporterManager from './emails/config/transporter.config';
 
 const app = express();
-const PORT = process.env.PORT || 3005;
 
+// Middleware
 app.use(helmet());
-app.use(cors({
-  origin: true,
-  credentials: true,
-}));
-app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+const corsOptions = {
+  origin: process.env.CORS_ORIGINS 
+    ? process.env.CORS_ORIGINS.split(',')
+    : ['https://moorhall.com', 'http://localhost:5173'],
+  credentials: true,
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
+app.use(morgan('dev'));
+
+// Swagger docs
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
+// Root route
+app.get('/', (req, res) => {
+  res.send('Welcome to the MoorHall API 🚀');
+});
+
+// Health check route
 app.get('/health', async (req, res) => {
   const timestamp = new Date().toISOString();
 
-  // If DATABASE_URL is not configured, return a DB-free healthy response.
   if (!process.env.DATABASE_URL) {
     return res.json({ status: 'ok', database: 'not-configured', timestamp });
   }
 
   try {
-    // Test database connection (lazy-initializes Prisma)
     await prisma.$queryRaw`SELECT 1`;
     return res.json({ status: 'ok', database: 'connected', timestamp });
   } catch (error) {
     console.error('Health check DB error:', error);
-    // Still return 200 so the endpoint is DB-free and doesn't cause function failures
     return res.json({ status: 'ok', database: 'disconnected', error: String(error), timestamp });
   }
 });
 
-app.use('/api/v1', mainRoutes);
+// Request timeout middleware
+app.use((req, res, next) => {
+  req.setTimeout(5 * 60 * 1000);
+  res.setTimeout(5 * 60 * 1000);
+  next();
+});
+
+// API routes
+const apiPath = process.env.API_PATH || '/api/v1';
+app.use(apiPath, mainRoutes);
+
+// Global error handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Unhandled error', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+  });
+
+  if (res.headersSent) return next(err);
+
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || 'Internal server error',
+  });
+});
 
 app.use(notFoundHandler);
-app.use(errorHandler);
 
-// Start the server
-const startServer = async () => {
+/**
+ * 🔑 IMPORTANT:
+ * - NO app.listen()
+ * - NO createServer()
+ * - DEFAULT EXPORT REQUIRED
+ */
+
+// Initialize services on cold start
+(async () => {
   try {
     if (process.env.DATABASE_URL) {
       await prisma.$connect();
       console.log('Database connected successfully');
-    } else {
-      console.log('DATABASE_URL not set; skipping DB connection');
     }
-
-    const server = app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
-    });
-
-    process.on('SIGTERM', async () => {
-      console.log('SIGTERM received, closing server...');
-      if (process.env.DATABASE_URL) await prisma.$disconnect();
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-      });
-    });
   } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+    console.error('Database connection failed:', error);
   }
-};
 
-startServer();
+  try {
+    await transporterManager.verifyAll();
+    console.log('[Email] Transporter verification completed. Health:', transporterManager.getHealthStatus());
+  } catch (err) {
+    console.warn('[Email] Transporter verification encountered errors:', err instanceof Error ? err.message : String(err));
+  }
+})();
 
 export default app;

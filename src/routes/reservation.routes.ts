@@ -4,6 +4,10 @@ import { protect } from '../middlewares/auth.middleware';
 
 const router = Router();
 
+// Public endpoint for guest reservations
+router.post('/guest', reservationController.createGuestReservation);
+
+// Protected admin endpoints
 router.use(protect);
 
 router.get('/', reservationController.getReservations);

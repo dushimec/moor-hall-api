@@ -39,4 +39,19 @@ export const deleteMenuItem = asyncHandler(async (req: Request, res: Response) =
   return res.json(apiResponse.success(null, 'Menu item deleted successfully'));
 });
 
-export default { createMenuItem, getMenuItems, getMenuItemById, updateMenuItem, toggleAvailability, deleteMenuItem };
+// ─── Public endpoints (no auth required) ───────────────────────────────────────
+
+export const getPublicMenuItems = asyncHandler(async (req: Request, res: Response) => {
+  const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
+  const productType = req.query.productType as string | undefined;
+  const menuItems = await menuItemService.getPublicMenuItems(categoryId, productType);
+  return res.json(apiResponse.success(menuItems, 'Menu items retrieved successfully'));
+});
+
+export const getPublicMenuItemById = asyncHandler(async (req: Request, res: Response) => {
+  const id = parseInt(req.params.id as string);
+  const menuItem = await menuItemService.getPublicMenuItemById(id);
+  return res.json(apiResponse.success(menuItem, 'Menu item retrieved successfully'));
+});
+
+export default { createMenuItem, getMenuItems, getMenuItemById, updateMenuItem, toggleAvailability, deleteMenuItem, getPublicMenuItems, getPublicMenuItemById };

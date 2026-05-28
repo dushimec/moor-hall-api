@@ -1,7 +1,7 @@
 import prisma from '../config/db';
 import ApiError from '../utils/apiError';
 
-export async function createCategory(data: { name: string; slug: string; description?: string; type: string; displayOrder?: number }) {
+export async function createCategory(data: { name: string; slug: string; description?: string; type: string; displayOrder?: number; isActive?: boolean }) {
   const existing = await prisma.menuCategory.findUnique({ where: { slug: data.slug } });
   if (existing) {
     throw ApiError.conflict('Category with this slug already exists');
@@ -14,6 +14,7 @@ export async function createCategory(data: { name: string; slug: string; descrip
       description: data.description,
       type: data.type as any,
       displayOrder: data.displayOrder || 0,
+      isActive: data.isActive !== undefined ? data.isActive : true,
     },
   });
 

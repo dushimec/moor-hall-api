@@ -2,6 +2,7 @@ import prisma from '../config/db';
 import { hashPassword, comparePassword } from '../utils/hash';
 import { generateAccessToken, generateRefreshToken, verifyToken, generateResetToken } from '../utils/token';
 import ApiError from '../utils/apiError';
+import emailService from '../emails/services/email.service';
 import { RegisterInput, LoginInput, ChangePasswordInput, UpdateProfileInput, ForgotPasswordInput, ResetPasswordInput, TokenPair } from '../types/auth.types';
 
 interface AdminWithoutPassword {
@@ -256,12 +257,10 @@ class AuthService {
       where: { email: input.email },
     });
 
-    if (!admin) {
-      throw ApiError.notFound('Admin not found');
-    }
-
-    if (admin.status === 'SUSPENDED') {
-      throw ApiError.forbidden('Account is suspended');
+    // Prevent user enumeration — always return success if email not found
+    if (!admin || admin.status === 'SUSPENDED') {
+      // Still return a token-like response to prevent timing-based enumeration
+      return { resetToken: generateResetToken() };
     }
 
     const resetToken = generateResetToken();
@@ -274,6 +273,20 @@ class AuthService {
         passwordResetToken: resetTokenHash,
         passwordResetExpires: resetExpires,
       },
+    });
+
+    const resetLink = `${process.env.FRONTEND_URL || 'https://moorhall.com'}/reset-password?token=${resetToken}`;
+    const expiryTime = '1 hour';
+
+    // Send reset email (fire-and-forget, don't block response on email failure)
+    emailService.sendForgotPasswordEmail({
+      to: admin.email,
+      toName: admin.fullName,
+      resetLink,
+      expiryTime,
+      requestTime: new Date().toISOString(),
+    }).catch((err) => {
+      console.error('[Auth] Failed to send forgot password email:', err.message);
     });
 
     return { resetToken };
@@ -305,6 +318,18 @@ class AuthService {
         passwordResetToken: null,
         passwordResetExpires: null,
       },
+    });
+
+    // Send reset success confirmation email (fire-and-forget)
+    const loginLink = `${process.env.FRONTEND_URL || 'https://moorhall.com'}/login`;
+
+    emailService.sendResetSuccessEmail({
+      to: admin.email,
+      toName: admin.fullName,
+      loginLink,
+      timestamp: new Date().toISOString(),
+    }).catch((err) => {
+      console.error('[Auth] Failed to send reset success email:', err.message);
     });
   }
 

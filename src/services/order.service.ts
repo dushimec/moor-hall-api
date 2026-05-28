@@ -10,7 +10,7 @@ export interface CreateGuestOrderInput {
   locationNotes?: string;
   orderType: 'PICKUP' | 'DELIVERY';
   items: Array<{
-    menuItemId?: number;
+    menuItemId?: number | string;
     itemName?: string;
     itemDescription?: string;
     unitPrice?: number;
@@ -24,9 +24,21 @@ export async function createGuestOrder(input: CreateGuestOrderInput) {
   const orderNumber = await generateOrderNumber();
 
   // Collect all menuItemIds that need to be looked up
-  const menuItemIds = input.items
+  // Convert string IDs to numbers for Prisma query
+  const rawIds = input.items
     .map(item => item.menuItemId)
-    .filter((id): id is number => id !== undefined);
+    .filter((id): id is number | string => id !== undefined);
+  
+  // Convert all IDs to numbers
+  const menuItemIds: number[] = rawIds
+    .map(id => {
+      if (typeof id === 'string') {
+        const parsed = parseInt(id, 10);
+        return isNaN(parsed) ? null : parsed;
+      }
+      return id;
+    })
+    .filter((id): id is number => id !== null);
 
   // Build a map of menu items for quick lookup
   const menuItemsMap = new Map<number, { name: string; price: number }>();
@@ -47,7 +59,11 @@ export async function createGuestOrder(input: CreateGuestOrderInput) {
     let itemName: string;
 
     if (item.menuItemId) {
-      const menuData = menuItemsMap.get(item.menuItemId);
+      // Convert string menuItemId to number for map lookup
+      const menuItemIdNum = typeof item.menuItemId === 'string'
+        ? parseInt(item.menuItemId, 10)
+        : item.menuItemId;
+      const menuData = menuItemsMap.get(menuItemIdNum);
       if (!menuData) {
         throw new Error(`Menu item with id ${item.menuItemId} not found`);
       }
@@ -69,7 +85,7 @@ export async function createGuestOrder(input: CreateGuestOrderInput) {
     subtotal += lineTotal;
 
     return {
-      menuItemId: item.menuItemId,
+      menuItemId: typeof item.menuItemId === 'string' ? parseInt(item.menuItemId, 10) : item.menuItemId,
       itemNameSnapshot: itemName,
       itemDescriptionSnapshot: item.itemDescription || '',
       unitPriceSnapshot: parseFloat(unitPrice.toFixed(2)),
@@ -82,6 +98,9 @@ export async function createGuestOrder(input: CreateGuestOrderInput) {
   // Round subtotal to 2 decimal places
   subtotal = parseFloat(subtotal.toFixed(2));
   const totalAmount = subtotal;
+
+  // Convert orderType to uppercase for Prisma enum
+  const orderTypeUpper = input.orderType.toUpperCase() as 'DELIVERY' | 'PICKUP';
 
   const paymentMode = await getPaymentMode();
   const requiredPaymentAmount = paymentMode === 'HALF_PAYMENT_BEFORE_APPROVAL'
@@ -96,7 +115,7 @@ export async function createGuestOrder(input: CreateGuestOrderInput) {
       customerAltPhone: input.customerAltPhone,
       deliveryAddress: input.deliveryAddress,
       locationNotes: input.locationNotes,
-      orderType: input.orderType as any,
+      orderType: orderTypeUpper,
       sourceChannel: 'WEBSITE',
       subtotal,
       totalAmount,

@@ -10,6 +10,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
+  rememberMe: z.boolean().optional().default(false), // Default to false (14 days), true = 30 days
 });
 
 export const changePasswordSchema = z.object({
