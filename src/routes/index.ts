@@ -21,6 +21,12 @@ import emailRoutes from './email.routes';
 
 const router = Router();
 
+router.get('/', (req, res) => {
+  res.json({
+    message: 'API v1 is working 🚀',
+  });
+});
+
 router.use('/auth', authRoutes);
 router.use('/admin', adminRoutes);
 router.use('/admin/activities', activityRoutes);
