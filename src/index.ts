@@ -1,29 +1,37 @@
-import app from './server';
 import dotenv from 'dotenv';
-import prisma from './config/db';
-
 dotenv.config();
+
+import app from './server';
+import prisma from './config/db';
 
 const PORT = process.env.PORT || 3005;
 
-// Connect to database and start server
+/**
+ * =========================
+ * LOCAL DEVELOPMENT ONLY
+ * =========================
+ */
 const startServer = async () => {
   try {
-    if (process.env.DATABASE_URL) {
+    // Connect DB ONLY in local (not serverless)
+    if (!process.env.VERCEL && process.env.DATABASE_URL) {
       await prisma.$connect();
       console.log('Database connected successfully');
-    } else {
-      console.log('DATABASE_URL not set; skipping DB connection');
     }
 
     const server = app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-      console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Swagger: http://localhost:${PORT}/api-docs`);
     });
 
+    // Graceful shutdown (local only)
     process.on('SIGTERM', async () => {
-      console.log('SIGTERM received, closing server...');
-      if (process.env.DATABASE_URL) await prisma.$disconnect();
+      console.log('SIGTERM received, shutting down...');
+
+      if (process.env.DATABASE_URL) {
+        await prisma.$disconnect();
+      }
+
       server.close(() => {
         console.log('Server closed');
         process.exit(0);
@@ -35,10 +43,18 @@ const startServer = async () => {
   }
 };
 
-// Only start server in local development (not in Vercel serverless)
+/**
+ * =========================
+ * RUN ONLY IN LOCAL
+ * =========================
+ */
 if (!process.env.VERCEL) {
   startServer();
 }
 
-// Export app for Vercel serverless functions
+/**
+ * =========================
+ * VERCEL EXPORT (IMPORTANT)
+ * =========================
+ */
 export default app;
