@@ -1,5 +1,5 @@
 import prisma from '../src/config/db';
-import { uploadImage } from '../src/gateways/cloudinary.gateway';
+import { uploadSingleImage } from '../src/gateways/cloudinary.gateway';
 import fs from 'fs';
 import path from 'path';
 import https from 'https';
@@ -58,7 +58,7 @@ async function resolveCloudinaryUrl(imageRef: string, folder: string): Promise<s
     buffer = fs.readFileSync(absPath);
   }
 
-  const cloudinaryUrl = await uploadImage(buffer, folder);
+  const cloudinaryUrl = await uploadSingleImage(buffer, folder);
   console.log(`   ☁ Uploaded to Cloudinary: ${path.basename(imageRef)} → ${cloudinaryUrl}`);
   return cloudinaryUrl;
 }
@@ -427,7 +427,7 @@ async function main() {
        categoryMap[cat.slug] = existing[0].id;
      } else {
        const created = await prisma.menuCategory.create({
-         data: { name: cat.name, slug: cat.slug, description: cat.description, type: cat.type as CategoryType },
+         data: { name: cat.name, slug: cat.slug, description: cat.description, type: cat.type as any },
        });
        console.log(`   ✓ Created category "${cat.name}" (id=${created.id})`);
        categoryMap[cat.slug] = created.id;
@@ -478,10 +478,10 @@ async function main() {
               slug: item.slug,
               shortDescription: item.shortDescription,
               description: item.description,
-              productType: item.productType,
+              productType: item.productType as any,
               price: item.price,
               imageUrl,
-              images: imageUrl ? [imageUrl] : null,
+              images: imageUrl ? [imageUrl] : [],
               isFeatured: item.isFeatured,
               isAvailable: item.isAvailable,
             },

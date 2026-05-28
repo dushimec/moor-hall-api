@@ -128,7 +128,7 @@ export async function updateMenuItem(id: number, data: {
       description: data.description !== undefined ? data.description : menuItem.description,
       price: data.price !== undefined ? data.price : menuItem.price,
       imageUrl: data.imageUrl !== undefined ? data.imageUrl : menuItem.imageUrl,
-      images: data.images !== undefined ? data.images : menuItem.images,
+      images: data.images !== undefined ? (data.images as any) : menuItem.images,
       isAvailable: data.isAvailable !== undefined ? data.isAvailable : menuItem.isAvailable,
       isFeatured: data.isFeatured !== undefined ? data.isFeatured : menuItem.isFeatured,
       preparationTime: data.preparationTime !== undefined ? data.preparationTime : menuItem.preparationTime,

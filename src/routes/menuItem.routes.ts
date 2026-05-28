@@ -2,13 +2,10 @@ import { Router, Request, Response } from 'express';
 import * as menuItemController from '../controllers/menuItem.controller';
 import { protect } from '../middlewares/auth.middleware';
 import { uploadMultipleImages } from '../gateways/cloudinary.gateway';
-// @ts-ignore
 import multer from 'multer';
 import asyncHandler from '../utils/asyncHandler';
 
 type UploadedFile = { buffer: Buffer };
-
-// @ts-ignore
 
 const router = Router();
 
@@ -29,9 +26,8 @@ router.post(
   '/images',
   upload.array('images', 10),
   asyncHandler(async (req: Request, res: Response) => {
-    console.log('[POST /admin/menu-items/images] incoming request, files count:', req.files ? (req.files as UploadedFile[]).length : 0);
-
-    const files = req.files as UploadedFile[];
+    const files = (req.files || []) as UploadedFile[];
+    console.log('[POST /admin/menu-items/images] incoming request, files count:', files.length);
     if (!files || files.length === 0) {
       return res.status(400).json({ error: 'No files provided' });
     }
@@ -64,8 +60,8 @@ router.post(
   '/:id/images',
   upload.array('images', 10),
   asyncHandler(async (req: Request, res: Response) => {
-    const files = req.files as UploadedFile[];
-    if (!files || files.length === 0) {
+    const files = (req.files || []) as UploadedFile[];
+    if (files.length === 0) {
       return res.status(400).json({ error: 'No files provided' });
     }
 
