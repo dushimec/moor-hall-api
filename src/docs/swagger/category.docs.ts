@@ -68,4 +68,4 @@ const categoryDocs = {
   },
 };
 
-module.exports = categoryDocs;
+export default categoryDocs;

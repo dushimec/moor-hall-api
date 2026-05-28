@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import ApiError from '../utils/apiError';
-import apiResponse from '../utils/apiResponse';
+import ApiError from '../utils/apiError.js';
+import apiResponse from '../utils/apiResponse.js';
 
 interface ErrorWithStatus extends Error {
   statusCode?: number;

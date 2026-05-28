@@ -5,9 +5,9 @@ import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 
-import mainRoutes from './routes/index';
-import { notFoundHandler } from './middlewares/error.middleware';
-import swaggerSpecs from './config/swagger';
+import mainRoutes from './routes/index.js';
+import { notFoundHandler } from './middlewares/error.middleware.js';
+import swaggerSpecs from './config/swagger.js';
 
 const app = express();
 

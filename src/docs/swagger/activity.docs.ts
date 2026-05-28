@@ -18,4 +18,4 @@ const activityDocs = {
   },
 };
 
-module.exports = activityDocs;
+export default activityDocs;

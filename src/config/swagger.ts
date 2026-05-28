@@ -1,15 +1,13 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import { Options } from 'swagger-jsdoc';
-
-// Import docs from docs/swagger folder (using require for CommonJS modules)
-const authDocs = require('../docs/swagger/auth.docs').default || require('../docs/swagger/auth.docs');
-const categoryDocs = require('../docs/swagger/category.docs');
-const adminDocs = require('../docs/swagger/admin.docs');
-const activityDocs = require('../docs/swagger/activity.docs');
-const notificationDocs = require('../docs/swagger/notification.docs');
-const orderDocs = require('../docs/swagger/orders.docs');
-const menuItemDocs = require('../docs/swagger/menu.docs');
-const customerDocs = require('../docs/swagger/customer.docs');
+import authDocs from '../docs/swagger/auth.docs.js';
+import categoryDocs from '../docs/swagger/category.docs.js';
+import adminDocs from '../docs/swagger/admin.docs.js';
+import activityDocs from '../docs/swagger/activity.docs.js';
+import notificationDocs from '../docs/swagger/notification.docs.js';
+import orderDocs from '../docs/swagger/orders.docs.js';
+import menuItemDocs from '../docs/swagger/menu.docs.js';
+import customerDocs from '../docs/swagger/customer.docs.js';
 
 const swaggerOptions: Options = {
   apis: [], // Required by swagger-jsdoc; paths are defined manually in definition.paths

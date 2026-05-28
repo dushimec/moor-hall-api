@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import * as authController from '../controllers/auth.controller';
-import { authenticate } from '../middlewares/auth.middleware';
-import { requireAdmin } from '../middlewares/role.middleware';
-import { registerSchema, loginSchema, changePasswordSchema, refreshTokenSchema, updateProfileSchema, forgotPasswordSchema, resetPasswordSchema } from '../types/auth.types';
-import { validate } from '../middlewares/validate.middleware';
+import * as authController from '../controllers/auth.controller.js';
+import { authenticate } from '../middlewares/auth.middleware.js';
+import { requireAdmin } from '../middlewares/role.middleware.js';
+import { registerSchema, loginSchema, changePasswordSchema, refreshTokenSchema, updateProfileSchema, forgotPasswordSchema, resetPasswordSchema } from '../types/auth.types.js';
+import { validate } from '../middlewares/validate.middleware.js';
 
 const router = Router();
 

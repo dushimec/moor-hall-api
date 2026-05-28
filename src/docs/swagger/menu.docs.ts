@@ -88,4 +88,4 @@ const menuItemDocs = {
   },
 };
 
-module.exports = menuItemDocs;
+export default menuItemDocs;

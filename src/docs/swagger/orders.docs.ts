@@ -158,4 +158,4 @@ const orderDocs = {
   },
 };
 
-module.exports = orderDocs;
+export default orderDocs;

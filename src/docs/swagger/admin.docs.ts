@@ -8,4 +8,4 @@ const adminDocs = {
   },
 };
 
-module.exports = adminDocs;
+export default adminDocs;

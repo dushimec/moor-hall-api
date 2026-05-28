@@ -17,4 +17,4 @@ const customerDocs = {
   },
 };
 
-module.exports = customerDocs;
+export default customerDocs;

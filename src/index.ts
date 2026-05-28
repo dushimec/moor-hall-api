@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import app from './server';
-import prisma from './config/db';
+import app from './server.js';
+import prisma from './config/db.js';
 
 const PORT = process.env.PORT || 3005;
 
@@ -53,10 +53,4 @@ if (!process.env.VERCEL) {
   startServer();
 }
 
-/**
- * =========================
- * VERCEL EXPORT (IMPORTANT)
- * =========================
- */
-module.exports = app;
 export default app;

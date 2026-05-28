@@ -23,4 +23,4 @@ const notificationDocs = {
   },
 };
 
-module.exports = notificationDocs;
+export default notificationDocs;
