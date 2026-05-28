@@ -58,7 +58,5 @@ if (!process.env.VERCEL) {
  * VERCEL EXPORT (IMPORTANT)
  * =========================
  */
-// CommonJS export for Vercel compatibility
 module.exports = app;
-// ESM export 
 export default app;
