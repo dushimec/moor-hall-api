@@ -28,6 +28,9 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
+# Deploy migrations to production database
+RUN npm run db:prod
+
 # Expose port
 EXPOSE 3005
 

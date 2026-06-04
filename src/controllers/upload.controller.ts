@@ -140,7 +140,7 @@ export const preUploadMultipleImages = asyncHandler(async (req: UploadRequest, r
 export const deleteImage = asyncHandler(async (req: Request, res: Response) => {
   const { publicId } = req.params;
 
-  await uploadService.deleteImage(publicId);
+  await uploadService.deleteImage(publicId as string);
   return res.json(apiResponse.success(null, 'Image deleted successfully'));
 });
 
