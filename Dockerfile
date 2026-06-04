@@ -37,5 +37,5 @@ EXPOSE 3005
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3005/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)});" || exit 1
 
-# Start application
-CMD ["node", "dist/index.js"]
+# Start application with migrations
+CMD ["sh", "-c", "npm run db:prod && npm start"]
