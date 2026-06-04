@@ -8,7 +8,7 @@ import { DEFAULT_UPLOAD_VALIDATION, UPLOAD_ERROR_MESSAGES } from '../types/uploa
  * Custom Express Request type with files
  */
 export interface UploadRequest extends Request {
-  files?: Express.Multer.File[];
+  files?: Express.Multer.File[] | { [fieldname: string]: Express.Multer.File[] };
   file?: Express.Multer.File;
 }
 
@@ -73,15 +73,30 @@ export function uploadMultipleImagesMiddleware(
  * @throws ApiError if validation fails
  */
 export function validateUploadedFiles(req: UploadRequest, requireFiles: boolean = true): void {
-  if (requireFiles && (!req.files || req.files.length === 0) && (!req.file)) {
+  // Get all files from request
+  let allFiles: Express.Multer.File[] = [];
+  
+  if (req.file) {
+    allFiles.push(req.file);
+  }
+  
+  if (req.files) {
+    if (Array.isArray(req.files)) {
+      allFiles.push(...req.files);
+    } else {
+      // Object format: { [fieldname]: File[] }
+      allFiles.push(...Object.values(req.files).flat());
+    }
+  }
+  
+  // Check if files are required
+  if (requireFiles && allFiles.length === 0) {
     throw ApiError.badRequest(UPLOAD_ERROR_MESSAGES.NO_FILES);
   }
 
-  // Validate file sizes (multer should handle this, but double-check)
-  const files = req.files || (req.file ? [req.file] : []);
+  // Validate file sizes
   const maxFileSize = DEFAULT_UPLOAD_VALIDATION.maxFileSize || 5 * 1024 * 1024;
-
-  for (const file of files) {
+  for (const file of allFiles) {
     if (file.size > maxFileSize) {
       throw ApiError.badRequest(UPLOAD_ERROR_MESSAGES.FILE_TOO_LARGE);
     }
@@ -94,18 +109,46 @@ export function validateUploadedFiles(req: UploadRequest, requireFiles: boolean 
  * @returns Array of file buffers
  */
 export function extractFileBuffers(req: UploadRequest): Buffer[] {
-  const files = req.files || (req.file ? [req.file] : []);
+  let files: Express.Multer.File[] = [];
+  
+  if (req.files) {
+    if (Array.isArray(req.files)) {
+      files = req.files;
+    } else {
+      // Handle multer object format: { [fieldname]: File[] }
+      files = Object.values(req.files).flat();
+    }
+  } else if (req.file) {
+    files = [req.file];
+  }
+  
   return files.map((file) => file.buffer);
 }
 
 /**
  * Extract single file buffer from request
  * @param req - Express request
- * @returns File buffer or null
+ * @returns File buffer or undefined
  */
-export function extractSingleFileBuffer(req: UploadRequest): Buffer | null {
-  return req.file?.buffer || null;
+export function extractSingleFileBuffer(req: UploadRequest): Buffer | undefined {
+  if (req.file) {
+    return req.file.buffer;
+  }
+  
+  if (req.files) {
+    let files: Express.Multer.File[] = [];
+    if (Array.isArray(req.files)) {
+      files = req.files;
+    } else {
+      files = Object.values(req.files).flat();
+    }
+    return files.length > 0 ? files[0].buffer : undefined;
+  }
+  
+  return undefined;
 }
+
+
 
 /**
  * Multer error handler middleware

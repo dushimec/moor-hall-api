@@ -8,18 +8,20 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+import type { CloudinaryUploadResponse } from '../types/upload.types.js';
+
 /**
  * Upload a single image buffer to Cloudinary
  * @param buffer - Image file buffer
  * @param folder - Optional folder path in Cloudinary (default: 'moorhall/images')
  * @param retries - Internal retry counter
- * @returns Cloudinary URL of the uploaded image
+ * @returns Cloudinary upload response with metadata
  */
 export async function uploadSingleImage(
   buffer: Buffer,
   folder: string = 'moorhall/images',
   retries: number = 0
-): Promise<string> {
+): Promise<CloudinaryUploadResponse> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
@@ -62,7 +64,13 @@ export async function uploadSingleImage(
           }
         } else if (result?.secure_url) {
           console.log(`[Cloudinary] Successfully uploaded image: ${result.secure_url}`);
-          resolve(result.secure_url);
+          resolve({
+            secure_url: result.secure_url,
+            public_id: result.public_id,
+            width: result.width,
+            height: result.height,
+            format: result.format,
+          });
         } else {
           reject(new Error('No secure URL returned from Cloudinary'));
         }
@@ -79,12 +87,12 @@ export async function uploadSingleImage(
  * Upload multiple image buffers to Cloudinary
  * @param buffers - Array of image file buffers
  * @param folder - Optional folder path in Cloudinary (default: 'moorhall/images')
- * @returns Array of Cloudinary URLs
+ * @returns Array of Cloudinary upload responses with metadata
  */
 export async function uploadMultipleImages(
   buffers: Buffer[],
   folder: string = 'moorhall/images'
-): Promise<string[]> {
+): Promise<CloudinaryUploadResponse[]> {
   if (!buffers || buffers.length === 0) {
     throw new Error('No buffers provided for upload');
   }
@@ -95,11 +103,11 @@ export async function uploadMultipleImages(
     const uploadPromises = buffers.map((buffer) =>
       uploadSingleImage(buffer, folder)
     );
-    const urls = await Promise.all(uploadPromises);
+    const results = await Promise.all(uploadPromises);
     console.log(
-      `[Cloudinary] Successfully uploaded ${urls.length} image(s)`
+      `[Cloudinary] Successfully uploaded ${results.length} image(s)`
     );
-    return urls;
+    return results;
   } catch (error) {
     console.error('[Cloudinary] Upload failed:', error);
     throw error;
@@ -128,6 +136,27 @@ export async function deleteImage(publicId: string): Promise<void> {
 }
 
 /**
+ * Delete multiple images from Cloudinary by public IDs
+ * @param publicIds - Array of Cloudinary public IDs to delete
+ */
+export async function deleteMultipleImages(publicIds: string[]): Promise<void> {
+  if (!publicIds || publicIds.length === 0) {
+    return;
+  }
+
+  try {
+    const deletePromises = publicIds.map((publicId) => deleteImage(publicId));
+    await Promise.all(deletePromises);
+    console.log(
+      `[Cloudinary] Successfully deleted ${publicIds.length} image(s)`
+    );
+  } catch (error) {
+    console.error('[Cloudinary] Batch delete failed:', error);
+    throw error;
+  }
+}
+
+/**
  * Verify Cloudinary configuration
  */
 export function verifyCloudinaryConfig(): boolean {
@@ -150,5 +179,6 @@ export default {
   uploadSingleImage,
   uploadMultipleImages,
   deleteImage,
+  deleteMultipleImages,
   verifyCloudinaryConfig,
 };
