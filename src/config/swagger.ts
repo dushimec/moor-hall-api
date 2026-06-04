@@ -60,7 +60,7 @@ For API support, contact the development team.
         description: 'Development server',
       },
       {
-        url: 'https://api.moorhall.rw/',
+        url: 'https://moorhallapi-haatnpvg.b4a.run/',
         description: 'Production server',
       },
     ],
