@@ -1,6 +1,9 @@
 # Build stage
 FROM node:18-alpine AS builder
 
+# Install build dependencies including OpenSSL
+RUN apk add --no-cache openssl python3 make g++
+
 WORKDIR /app
 
 # Copy all source files including prisma schema
@@ -14,6 +17,9 @@ RUN npm run build
 
 # Production stage
 FROM node:18-alpine
+
+# Install runtime dependencies including OpenSSL
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
