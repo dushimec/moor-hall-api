@@ -59,6 +59,7 @@ model MenuItem {
   productType      ProductType
   price            Decimal     @db.Decimal(10, 2)
   imageUrl         String?
+  imagePublicId    String?     // Cloudinary public ID for deletion/management
   images           Json?       // Array of additional image URLs
   isAvailable      Boolean     @default(true)
   isFeatured       Boolean     @default(false)
@@ -76,15 +77,16 @@ model MenuItem {
 }
 
 model ServiceItem {
-  id          Int         @id @default(autoincrement())
-  name        String
-  slug        String      @unique
-  type        ServiceType
-  description String?
-  imageUrl    String?
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id             Int         @id @default(autoincrement())
+  name           String
+  slug           String      @unique
+  type           ServiceType
+  description    String?
+  imageUrl       String?
+  imagePublicId  String?     // Cloudinary public ID for deletion/management
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 }
 
 model Order {
@@ -231,6 +233,7 @@ model CateringRequest {
   preferredDate     DateTime
   budgetRange       String?
   notes             String?
+  images            Json?          // Array of {secure_url, public_id} for catering event images
   status            CateringStatus @default(PENDING)
   reviewedByAdminId Int?
   reviewedAt        DateTime?
@@ -325,6 +328,7 @@ model GalleryItem {
   id           Int         @id @default(autoincrement())
   title        String?
   imageUrl     String
+  imagePublicId String?    // Cloudinary public ID for deletion/management
   imageType    GalleryType
   displayOrder Int         @default(0)
   isPublished  Boolean     @default(true)

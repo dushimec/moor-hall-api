@@ -102,6 +102,7 @@ export async function updateMenuItem(id: number, data: {
   description?: string;
   price?: number;
   imageUrl?: string;
+  imagePublicId?: string;
   images?: string[];
   isAvailable?: boolean;
   isFeatured?: boolean;
@@ -128,6 +129,7 @@ export async function updateMenuItem(id: number, data: {
       description: data.description !== undefined ? data.description : menuItem.description,
       price: data.price !== undefined ? data.price : menuItem.price,
       imageUrl: data.imageUrl !== undefined ? data.imageUrl : menuItem.imageUrl,
+      imagePublicId: data.imagePublicId !== undefined ? data.imagePublicId : menuItem.imagePublicId,
       images: data.images !== undefined ? (data.images as any) : menuItem.images,
       isAvailable: data.isAvailable !== undefined ? data.isAvailable : menuItem.isAvailable,
       isFeatured: data.isFeatured !== undefined ? data.isFeatured : menuItem.isFeatured,

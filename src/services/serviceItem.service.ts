@@ -7,6 +7,7 @@ export async function createServiceItem(data: {
   type: string;
   description?: string;
   imageUrl?: string;
+  imagePublicId?: string;
   isActive?: boolean;
 }) {
   return prisma.serviceItem.create({
@@ -16,6 +17,7 @@ export async function createServiceItem(data: {
       type: data.type as any,
       description: data.description,
       imageUrl: data.imageUrl,
+      imagePublicId: data.imagePublicId,
       isActive: data.isActive ?? true,
     },
   });
@@ -41,6 +43,7 @@ export async function updateServiceItem(id: number, data: {
   type?: string;
   description?: string;
   imageUrl?: string;
+  imagePublicId?: string;
   isActive?: boolean;
 }) {
   const serviceItem = await prisma.serviceItem.findUnique({ where: { id } });
@@ -56,6 +59,7 @@ export async function updateServiceItem(id: number, data: {
       type: data.type as any,
       description: data.description,
       imageUrl: data.imageUrl,
+      imagePublicId: data.imagePublicId,
       isActive: data.isActive,
     },
   });

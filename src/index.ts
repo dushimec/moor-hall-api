@@ -8,49 +8,43 @@ const PORT = process.env.PORT || 3005;
 
 /**
  * =========================
- * LOCAL DEVELOPMENT ONLY
+ * START SERVER
  * =========================
  */
 const startServer = async () => {
   try {
-    // Connect DB ONLY in local (not serverless)
-    if (!process.env.VERCEL && process.env.DATABASE_URL) {
-      await prisma.$connect();
-      console.log('Database connected successfully');
-    }
+    // Connect to database
+    await prisma.$connect();
+    console.log('Database connected successfully');
 
-    // Only listen in local development
-    if (!process.env.VERCEL) {
-      const server = app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-        console.log(`Swagger: http://localhost:${PORT}/api-docs`);
-      });
+    // Start server
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Swagger: http://localhost:${PORT}/api-docs`);
+    });
 
-      // Graceful shutdown (local only)
-      process.on('SIGTERM', async () => {
-        console.log('SIGTERM received, shutting down...');
-        if (process.env.DATABASE_URL) {
-          await prisma.$disconnect();
-        }
-        server.close(() => {
-          console.log('Server closed');
-          process.exit(0);
-        });
+    // Graceful shutdown
+    process.on('SIGTERM', async () => {
+      console.log('SIGTERM received, shutting down gracefully...');
+      server.close(async () => {
+        await prisma.$disconnect();
+        console.log('Server and database connection closed');
+        process.exit(0);
       });
-    }
+    });
+
+    process.on('SIGINT', async () => {
+      console.log('SIGINT received, shutting down gracefully...');
+      server.close(async () => {
+        await prisma.$disconnect();
+        console.log('Server and database connection closed');
+        process.exit(0);
+      });
+    });
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
 };
 
-/**
- * =========================
- * RUN ONLY IN LOCAL
- * =========================
- */
-if (!process.env.VERCEL) {
-  startServer();
-}
-
-export default app;
+startServer();
