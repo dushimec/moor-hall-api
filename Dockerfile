@@ -20,12 +20,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
+# Copy prisma schema before npm install so postinstall can find it
+COPY --from=builder /app/prisma ./prisma
+
 # Install production dependencies only
 RUN npm ci --omit=dev
 
 # Copy built application and prisma files from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Deploy migrations to production database
