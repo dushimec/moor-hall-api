@@ -194,11 +194,9 @@
 # FUNCTION SETTINGS
 # =============================================================================
 
-# Individual function settings for api handler
-[[functions]]
-  name = "api"
+# Function configuration for Netlify Functions
+[functions]
   node_bundler = "esbuild"
-  included_files = ["src/**", "prisma/**"]
   external_node_modules = ["@prisma/client", "express", "serverless-http"]
 
 # =============================================================================
