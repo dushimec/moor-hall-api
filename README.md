@@ -25,7 +25,34 @@ Backend API for the Moor Hall restaurant management system, built with Express.j
 - **File Storage**: Cloudinary
 - **Payments**: Stripe
 - **Messaging**: Twilio, Pindo, WhatsApp Cloud API
-- **Deployment**: Render
+- **Deployment**: Netlify (fully optimized)
+
+## 🚀 Netlify Deployment (Production-Ready)
+
+This project is **fully configured for seamless deployment to Netlify** with zero additional setup required beyond environment variables.
+
+### Quick Start (10 minutes)
+👉 **[Quick Start: Deploy to Netlify in 10 Minutes](./docs/QUICK_START_NETLIFY.md)**
+
+### Complete Documentation
+- 📖 [Complete Netlify Deployment Guide](./docs/NETLIFY_DEPLOYMENT.md) - End-to-end deployment instructions
+- ⚙️ [Environment Setup Guide](./docs/ENVIRONMENT_SETUP.md) - Configure local and production environments
+- 🔒 [Production Security Configuration](./docs/PRODUCTION_SECURITY.md) - Security best practices and headers
+- ⚡ [Performance Optimization Guide](./docs/PERFORMANCE_OPTIMIZATION.md) - Optimize for speed and reliability
+- 📚 [Deployment Documentation Index](./docs/DEPLOYMENT_INDEX.md) - Complete documentation reference
+
+### Pre-Configured for Production
+✅ Security headers and CORS configured  
+✅ Database connection pooling ready  
+✅ Serverless function routing setup  
+✅ GitHub Actions CI/CD pipeline included  
+✅ SSL/HTTPS automatic  
+✅ Global CDN edge caching  
+✅ Error tracking and monitoring ready  
+
+**Just add your environment variables and deploy!**
+
+---
 
 ## Project Structure
 
@@ -42,9 +69,10 @@ moor-hall-api/
 │   ├── routes/      # Route definitions
 │   ├── types/       # TypeScript types
 │   └── server.ts    # Express app configuration
-├── prisma/          # Database schema & migrations
+├── prisma/          # Database schema & migrations (PostgreSQL)
+├── netlify/         # Netlify serverless functions
+├── docs/            # Deployment & configuration guides
 ├── .env             # Local environment variables
-├── render.yaml      # Render deployment config
 └── package.json
 ```
 
@@ -146,43 +174,49 @@ See `.env.example` for all available configuration options.
 Swagger documentation is automatically generated from JSDoc comments.
 
 - **Local**: http://localhost:3005/api-docs
-- **Production**: `https://your-api.onrender.com/api-docs`
+- **Production**: `https://your-site.netlify.app/api-docs`
 
 ## Production Deployment
 
-### Render Deployment
+### Netlify Deployment
 
-This API is configured for deployment on Render.
+This API is fully configured and optimized for seamless deployment to Netlify with zero additional setup required.
 
-**Quick deploy**:
+**Quick start**:
 ```bash
 cd moor-hall-api
-git push origin main
+git push origin main  # Automatic deployment triggered
 ```
 
-Render will automatically detect the `render.yaml` configuration and deploy.
+Netlify automatically detects the `netlify.toml` configuration and deploys.
+
+👉 **[See Complete Netlify Deployment Guide](./docs/NETLIFY_DEPLOYMENT.md) for step-by-step instructions**
 
 **Prerequisites**:
-- Cloud PostgreSQL database (Neon, Supabase, Railway, etc.)
-- All required environment variables set in Render dashboard
+- PostgreSQL database (Supabase, Railway, AWS RDS, or self-hosted)
+- All required environment variables set in Netlify Dashboard
 
 ### Environment Variables for Production
 
-Set these in Render dashboard (Environment → Environment Variables):
+Set these in Netlify Dashboard (Settings → Build & Deploy → Environment):
 
 **Required**:
-- `DATABASE_URL`
-- `JWT_SECRET`
-- `JWT_REFRESH_SECRET`
-- `FRONTEND_URL` (your deployed frontend)
-- `BACKEND_URL` (your deployed API URL)
+- `DATABASE_URL` - PostgreSQL connection string (with `?sslmode=require`)
+- `JWT_SECRET` - Secure random string (32+ characters)
+- `SESSION_SECRET` - Secure random string (32+ characters)
+- `CORS_ORIGINS` - Your frontend domain(s)
 
 **Optional** (based on features used):
-- Email (SMTP), Cloudinary, Stripe, Twilio, etc.
+- Cloudinary, SendGrid, Stripe, WhatsApp, etc.
 
 ### Database Migrations on Production
 
-Migrations are automatically run during deployment via the `render.yaml` configuration.
+Use Prisma for managing migrations:
+```bash
+npm run db:prod  # Deploy pending migrations in production
+```
+
+See [Netlify Deployment Guide](./docs/NETLIFY_DEPLOYMENT.md) for detailed production database strategies.
 
 ## Architecture
 
@@ -206,11 +240,21 @@ The server supports standalone mode (development and production):
 
 ### Database Connection
 
-- **Development**: Direct connection with query logging
-- **Production**: Optimized for connection pooling
-  - Uses global PrismaClient instance
-  - Minimal logging
-  - Connection pool size managed via DATABASE_URL params
+PostgreSQL with Prisma ORM provides:
+
+- **Development**: Direct connection with query logging for debugging
+- **Production on Netlify**: Optimized for serverless environment
+  - Uses global PrismaClient instance for connection reuse
+  - Automatic connection pooling
+  - SSL encryption (required for cloud databases)
+  - Minimal logging in production
+  - Connection management via DATABASE_URL parameters
+
+**Best practices**:
+- Use connection pooling service (PgBouncer) for high-traffic scenarios
+- Database URL format: `postgresql://user:password@host:5432/database?sslmode=require`
+- Enable SSL to comply with Netlify security requirements
+- Recommended cloud providers: Supabase, Railway, AWS RDS
 
 ## API Endpoints
 
@@ -262,27 +306,30 @@ The server supports standalone mode (development and production):
 
 ## Monitoring
 
-- **Render Logs**: View in dashboard
-- **Database**: Use Prisma Studio or database GUI
-- **Error Tracking**: Integrate Sentry, LogRocket, etc. (optional)
+- **Netlify Dashboard**: View function logs, deployment status, and analytics
+- **Database**: Use Prisma Studio (`npm run db:studio`) or your database GUI
+- **Error Tracking**: Integrate Sentry, LogRocket, or similar services (optional)
+- **Performance**: Monitor response times in Netlify Analytics
 
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Database connection fails**
-   - Check DATABASE_URL is correct
-   - Ensure database is running and accessible
-   - Use public connection or whitelist Render IPs
+   - Check DATABASE_URL format: `postgresql://user:pass@host:port/db?sslmode=require`
+   - Test locally: `psql $DATABASE_URL -c "SELECT 1"`
+   - Verify database is accessible from Netlify
+   - Check credentials in Netlify environment variables
 
 2. **Prisma client not found**
    - Run `npm run db:generate`
    - Ensure `@prisma/client` is in dependencies
 
-3. **Build fails on Render**
-   - Check all env vars are set in Render dashboard
-   - Ensure postinstall script runs successfully
-   - View build logs in Render dashboard
+3. **Build fails on Netlify**
+   - Verify all env vars are set in Netlify Dashboard
+   - Check build logs: Netlify Dashboard → Deploys → Select failed deploy
+   - Run `npm run build` locally to reproduce issues
+   - See [Complete Troubleshooting Guide](./docs/NETLIFY_DEPLOYMENT.md#troubleshooting) for more solutions
 
 ## Contributing
 

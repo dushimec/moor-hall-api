@@ -1,12 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 
 // For serverless environments, we need to handle connection pooling carefully
+const isNetlify = !!process.env.NETLIFY || process.env.NETLIFY === 'true';
 const isVercel = !!process.env.VERCEL || process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+const isServerless = isNetlify || isVercel;
 const isProduction = process.env.NODE_ENV === 'production';
 
 const createClient = () => {
-  const logs = (isVercel || isProduction) ? ['error'] : ['query', 'error', 'warn'];
-  return new PrismaClient({ log: logs as any });
+  const logs = (isServerless || isProduction) ? ['error'] : ['query', 'error', 'warn'];
+  return new PrismaClient({ 
+    log: logs as any,
+    // Connection pooling for serverless environments
+    // Netlify Functions are cold-started, so we need efficient connection management
+  });
 };
 
 let _prisma: PrismaClient | null = null;

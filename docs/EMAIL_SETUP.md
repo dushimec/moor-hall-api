@@ -14,7 +14,7 @@ This document covers the complete email system architecture for the Moor Hall AP
 4. [Environment Configuration](#environment-configuration)
 5. [Transactional Provider Setup](#transactional-provider-setup)
 6. [Mailtrap Setup (Development)](#mailtrap-setup-development)
-7. [Render Deployment](#render-deployment)
+7. [Netlify Deployment](#netlify-deployment)
 8. [DNS Configuration](#dns-configuration)
 9. [Security Best Practices](#security-best-practices)
 10. [Troubleshooting](#troubleshooting)
@@ -62,7 +62,7 @@ moor-hall-api/src/emails/
 
 ## Why Not Gmail SMTP
 
-### The Problem with Gmail on Render
+### The Problem with Gmail on Netlify
 
 1. **"Less Secure App Access" Deprecated**
    - Google disabled this feature on May 30, 2022
@@ -76,7 +76,7 @@ moor-hall-api/src/emails/
    - Don't work with Google Workspace accounts managed by organizations
 
 3. **Cloud IP Reputation Issues**
-   - Render uses shared IP pools
+   - Netlify uses shared IP pools
    - These IPs may be blacklisted or flagged by Google
    - Google may block sign-in attempts from "unknown locations"
    - Results in `534-5.7.9 Application-specific password required`
@@ -253,61 +253,81 @@ MAILTRAP_SMTP_PASS=your-password
 
 ---
 
-## Render Deployment
+## Netlify Deployment
 
 ### Prerequisites
-- Render account (https://render.com)
+- Netlify account (https://app.netlify.com)
 - GitHub/GitLab/Bitbucket repository
-- Transactional provider SMTP credentials (or custom SMTP)
+- Transactional email provider API key (SendGrid, Mailgun, etc.)
+- PostgreSQL database (Supabase, Railway, AWS RDS, etc.)
 
-### Step 1: Create Render Service
-1. Go to Render Dashboard → **New** → **Web Service**
-2. Connect your GitHub repository
-3. Select the `moor-hall-api` directory
-4. Configure:
-   - **Runtime**: Node
-   - **Build Command**: `npm run build`
-   - **Start Command**: `npm start`
-   - **Instance Type**: Free or Starter
-
-### Step 2: Set Environment Variables
-In the Render dashboard, go to your service → **Environment** → **Add Environment Variable**:
+### Step 1: Set Environment Variables
+In the Netlify Dashboard, go to Settings → Build & Deploy → Environment → Edit Variables:
 
 ```
 NODE_ENV=production
-PORT=10000
-DATABASE_URL=your-postgresql-url
-JWT_SECRET=your-jwt-secret
-JWT_REFRESH_SECRET=your-refresh-secret
-# Use custom SMTP for production; configure your provider's SMTP values
-EMAIL_PROVIDER=custom
-SMTP_HOST=smtp.yourprovider.com
-SMTP_PORT=587
-SMTP_USER=your-username
-SMTP_PASS=your-password
-EMAIL_FROM_NAME=Moor Hall
-EMAIL_FROM_ADDRESS=noreply@moorhall.com
+DATABASE_URL=postgresql://user:pass@host:port/database?sslmode=require
+JWT_SECRET=your-secure-jwt-secret-key
+SESSION_SECRET=your-session-secret-key
+CORS_ORIGINS=https://your-frontend-domain.com
+
+# Email Provider (use SendGrid or similar for production)
+EMAIL_PROVIDER=sendgrid
+SENDGRID_API_KEY=SG.your-api-key
+SENDGRID_FROM_NAME=Moor Hall
+SENDGRID_FROM_EMAIL=noreply@moorhall.com
 EMAIL_REPLY_TO=support@moorhall.com
 ADMIN_EMAILS=admin@moorhall.com
-FRONTEND_URL=https://your-frontend-url.onrender.com
+
+# Frontend URL
+FRONTEND_URL=https://your-frontend-domain.com
 ```
 
-### Step 3: Deploy
-1. Click **Create Web Service**
-2. Render will automatically build and deploy
-3. Check logs for any errors
-4. Verify email functionality using the health endpoint:
-   ```
-   GET /api/v1/emails/health
-   Authorization: Bearer <your-admin-token>
-   ```
+### Step 2: Deploy
+1. Connect your GitHub repository to Netlify
+2. Netlify automatically detects `netlify.toml` configuration
+3. Click "Deploy site"
+4. Verify build succeeds and environment variables are set
+5. Test email functionality
 
-### Render-Specific Considerations
+**Check deployment**:
+```bash
+# Health check
+curl https://your-site.netlify.app/health
 
-1. **Ephemeral Filesystem**: Render's free tier uses an ephemeral filesystem. Don't store files locally.
-2. **Cold Starts**: Free tier instances sleep after 15 minutes of inactivity. First request may be slow.
-3. **Connection Pooling**: Use Prisma's connection pooling (already configured in `db.ts`).
-4. **Build Cache**: Enable build caching in Render for faster deployments.
+# View function logs
+# Netlify Dashboard → Functions → api → Logs
+```
+
+### Step 3: Verify Email Configuration
+1. Test email endpoint with admin token
+2. Check logs for any SMTP connection errors
+3. Verify emails arrive in recipient inbox
+4. Monitor SendGrid/provider dashboard for delivery status
+
+### Netlify-Specific Considerations
+
+1. **Function Execution Time**: Netlify has timeout limits (varies by plan). For large email operations:
+   - Use async job queues if needed
+   - Keep individual function execution under timeout
+   - Monitor function logs for timeouts
+
+2. **Cold Starts**: First invocation may be slow (typically <5 seconds):
+   - Acceptable for background email operations
+   - Use health checks to keep functions warm
+
+3. **Environment Variables**: 
+   - Set in Netlify Dashboard (not in .env files)
+   - Redeploy after changing variables
+   - Never commit secrets to Git
+
+4. **Database Connection**:
+   - Enable SSL (include `?sslmode=require` in CONNECTION_URL)
+   - Use connection pooling for reliability
+   - See [Netlify Deployment Guide](./NETLIFY_DEPLOYMENT.md) for details
+
+### For Complete Deployment Guide
+👉 **[See Netlify Deployment Guide](./NETLIFY_DEPLOYMENT.md)** for comprehensive setup instructions
 
 ---
 
@@ -404,7 +424,7 @@ DNS changes can take up to 48 hours to propagate globally, but usually complete 
 
 ### Environment Variables
 - Never commit `.env` files to version control
-- Use Render's environment variable management in production
+- Use Netlify Dashboard environment variable management in production
 - Use different credentials for development and production
 
 ### HTTPS Only
@@ -422,11 +442,12 @@ DNS changes can take up to 48 hours to propagate globally, but usually complete 
 **Cause**: Google blocked the sign-in attempt.
 **Solution**: Switch to a transactional provider.
 
-#### 2. "Connection timeout" on Render
-**Cause**: SMTP server is unreachable from Render's network.
+#### 2. "Connection timeout" on Netlify
+**Cause**: SMTP server is unreachable from Netlify's network.
 **Solution**:
 - Verify SMTP_HOST and SMTP_PORT are correct
-- Check if the SMTP provider allows connections from Render's IP
+- Check if the SMTP provider allows connections from Netlify edge locations
+- Ensure your SMTP provider is accessible from cloud environments
 - Try enabling/disabling TLS
 
 #### 3. "Authentication failed"
@@ -481,7 +502,7 @@ Expected response:
 ### Testing Checklist
 
 - [ ] Transactional provider / Mailtrap account created
-- [ ] SMTP credentials configured in `.env`
+- [ ] SMTP credentials configurein Netlify Dashboardv`
 - [ ] Environment variables set on Render
 - [ ] DNS records (SPF, DKIM, DMARC) configured
 - [ ] Test email sent successfully
