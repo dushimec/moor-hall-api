@@ -194,19 +194,12 @@
 # FUNCTION SETTINGS
 # =============================================================================
 
-# Global function configuration
-[functions]
-  # Timeout for functions (in seconds, max 26 for free tier, 900 for pro)
-  node_bundler = "esbuild"
-  
-  # Memory allocation (default 1024 MB)
-  # Note: This varies by plan, free tier has limits
-
-# Individual function settings
+# Individual function settings for api handler
 [[functions]]
+  name = "api"
   node_bundler = "esbuild"
-  included_files = ["src/**"]
-  external_node_modules = ["@prisma/client", "express"]
+  included_files = ["src/**", "prisma/**"]
+  external_node_modules = ["@prisma/client", "express", "serverless-http"]
 
 # =============================================================================
 # ERROR PAGES
