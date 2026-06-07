@@ -64,27 +64,45 @@
 # REDIRECTS & REWRITES
 # =============================================================================
 
-# API Routes - Proxy all API requests to the function handler
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-  force = false
-
-# Root redirect for API documentation
-[[redirects]]
-  from = "/api-docs"
-  to = "/.netlify/functions/api/api-docs"
-  status = 200
-
-# Health check endpoint
+# Health check endpoint (priority: highest)
 [[redirects]]
   from = "/health"
   to = "/.netlify/functions/api/health"
   status = 200
 
+# API documentation and assets (serves Swagger UI)
+[[redirects]]
+  from = "/api-docs/*"
+  to = "/.netlify/functions/api/api-docs/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/api-docs"
+  to = "/.netlify/functions/api/api-docs"
+  status = 200
+
+# All API routes
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+# Root path
+[[redirects]]
+  from = "/"
+  to = "/.netlify/functions/api/"
+  status = 200
+  force = true
+
+# Catch-all: Route everything else to the Express app
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
 # Single-page app fallback (if frontend is served from same domain)
-# Uncomment if needed: [[redirects]]
+# Uncomment if needed and remove the catch-all above:
+# [[redirects]]
 #   from = "/*"
 #   to = "/index.html"
 #   status = 200
