@@ -17,7 +17,7 @@ export interface UploadRequest extends Request {
  * @param options - Upload validation options
  * @returns Configured multer instance
  */
-function createMulterInstance(options: UploadValidationOptions = DEFAULT_UPLOAD_VALIDATION): Multer {
+export function createMulterInstance(options: UploadValidationOptions = DEFAULT_UPLOAD_VALIDATION): Multer {
   const fileFilter = (
     req: Request,
     file: Express.Multer.File,

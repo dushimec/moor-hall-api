@@ -73,10 +73,23 @@ export async function deleteServiceItem(id: number) {
   await prisma.serviceItem.delete({ where: { id } });
 }
 
+export async function toggleServiceStatus(id: number) {
+  const serviceItem = await prisma.serviceItem.findUnique({ where: { id } });
+  if (!serviceItem) {
+    throw ApiError.notFound('Service item not found');
+  }
+
+  return prisma.serviceItem.update({
+    where: { id },
+    data: { isActive: !serviceItem.isActive },
+  });
+}
+
 export default {
   createServiceItem,
   getServiceItems,
   getServiceItemById,
   updateServiceItem,
   deleteServiceItem,
+  toggleServiceStatus,
 };

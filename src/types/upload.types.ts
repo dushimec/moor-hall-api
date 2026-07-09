@@ -53,8 +53,8 @@ export interface UploadValidationOptions {
 }
 
 export const DEFAULT_UPLOAD_VALIDATION: UploadValidationOptions = {
-  maxFileSize: 5 * 1024 * 1024, // 5MB
-  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  maxFileSize: 300 * 1024 * 1024, // 300MB - increased from 5MB for PDF/menu item uploads
+  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'],
   maxFiles: 10,
 };
 

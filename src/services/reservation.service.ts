@@ -47,17 +47,22 @@ export async function createReservation(data: {
   phoneNumber: string;
   reservationDate: string | Date;
   reservationTime: string;
-  guestCount: number;
+  guestCount: number | string;
   status?: string;
   notes?: string;
 }) {
+  const normalizedGuestCount =
+    typeof data.guestCount === 'string'
+      ? parseInt(data.guestCount, 10)
+      : data.guestCount;
+
   return prisma.reservation.create({
     data: {
       customerName: data.customerName,
       phoneNumber: data.phoneNumber,
       reservationDate: new Date(data.reservationDate),
       reservationTime: data.reservationTime,
-      guestCount: data.guestCount,
+      guestCount: Number.isNaN(normalizedGuestCount) ? data.guestCount : normalizedGuestCount,
       status: (data.status as any) || 'PENDING',
       notes: data.notes,
     },

@@ -313,15 +313,20 @@ model ContentSection {
 }
 
 model Promotion {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  imageUrl    String?
-  startDate   DateTime?
-  endDate     DateTime?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   Int      @id @default(autoincrement())
+  title                String
+  description          String?
+  imageUrl             String?
+  imagePublicId        String?  // Cloudinary public ID for deletion/management
+  discountPercentage   Int?     // Discount percentage (e.g., 45 for 45%)
+  originalPrice        Decimal? @db.Decimal(10, 2)
+  discountedPrice      Decimal? @db.Decimal(10, 2)
+  startDate            DateTime?
+  endDate              DateTime?
+  isActive             Boolean  @default(true)
+  displayOrder         Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 }
 
 model GalleryItem {

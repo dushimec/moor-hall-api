@@ -8,6 +8,18 @@ import asyncHandler from '../utils/asyncHandler';
 type UploadedFile = { buffer: Buffer };
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
+const uploadPdf = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'));
+    }
+  },
+  limits: { fileSize: 300 * 1024 * 1024 }, // 300MB for PDF files
+});
 
 router.use(protect);
 
@@ -18,8 +30,7 @@ router.patch('/:id', menuItemController.updateMenuItem);
 router.patch('/:id/availability', menuItemController.toggleAvailability);
 router.delete('/:id', menuItemController.deleteMenuItem);
 
-// Configure multer for memory storage
-const upload = multer({ storage: multer.memoryStorage() });
+router.post('/upload-pdf', uploadPdf.single('pdf'), menuItemController.processMenuPdf);
 
 // Upload multiple images (standalone — no menu item ID required, used for pre-uploading before item creation)
 router.post(

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import ApiError from '../utils/apiError.js';
 import apiResponse from '../utils/apiResponse.js';
+import logger from '../utils/logger.js';
 
 interface ErrorWithStatus extends Error {
   statusCode?: number;
@@ -14,6 +15,21 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
+  logger.error(
+    {
+      message: err.message,
+      stack: err.stack,
+      url: req.url,
+      method: req.method,
+      requestId: req.requestId,
+    },
+    'Unhandled error'
+  );
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
   let statusCode = 500;
   let message = 'Internal server error';
   let errors: unknown[] | undefined;
