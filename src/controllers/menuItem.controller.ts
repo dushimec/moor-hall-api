@@ -156,10 +156,15 @@ export const getHomePageMenu = asyncHandler(async (req: Request, res: Response) 
     });
   }
 
+  const categoriesCount = Array.isArray(menu) ? menu.length : 0;
+  const itemsCount = Array.isArray(menu)
+    ? menu.reduce((sum: number, cat: any) => sum + (Array.isArray(cat?.items) ? cat.items.length : 0), 0)
+    : 0;
+
   return res.json(
     apiResponse.success(menu, 'Home page menu retrieved successfully', {
-      categories: menu.length,
-      items: menu.reduce((sum: number, cat: any) => sum + cat.items.length, 0),
+      categories: categoriesCount,
+      items: itemsCount,
     })
   );
 });

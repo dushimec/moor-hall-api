@@ -65,20 +65,26 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
   const cacheKey = cacheService.cacheKeys.heroSlides();
 
   // Try cache first
-  let slides = await cacheService.get(cacheKey);
+  let slides: HeroSlide[] | null = await cacheService.get<HeroSlide[]>(cacheKey);
 
   if (!slides) {
     // Fetch from database
     const promotions = await prisma.promotion.findMany({
       where: {
         isActive: true,
-        OR: [
-          { startDate: null },
-          { startDate: { lte: new Date() } },
-        ],
-        OR: [
-          { endDate: null },
-          { endDate: { gte: new Date() } },
+        AND: [
+          {
+            OR: [
+              { startDate: null },
+              { startDate: { lte: new Date() } },
+            ],
+          },
+          {
+            OR: [
+              { endDate: null },
+              { endDate: { gte: new Date() } },
+            ],
+          },
         ],
       },
       orderBy: { createdAt: 'desc' },
@@ -86,11 +92,11 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
     });
 
     // Transform to hero slides
-    slides = promotions.map((promo, index) => ({
+    slides = promotions.map((promo) => ({
       id: `promo-${promo.id}`,
       title: promo.title,
       description: promo.description || '',
-      image: promo.imageUrl,
+      image: promo.imageUrl ?? undefined,
       price: undefined, // If needed, can be added to Promotion model
       cta: {
         text: 'Order Now',
@@ -99,7 +105,7 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
     }));
 
     // If no promotions, fetch featured menu items as fallback
-    if (slides.length === 0) {
+    if ((slides ?? []).length === 0) {
       const featuredItems = await prisma.menuItem.findMany({
         where: {
           isAvailable: true,
@@ -113,7 +119,7 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
         id: `menu-${item.id}`,
         title: item.name,
         description: item.shortDescription || item.description || '',
-        image: item.imageUrl,
+        image: item.imageUrl ?? undefined,
         price: item.price ? `${item.price.toString()} GHS` : undefined,
         cta: {
           text: 'Order Now',
@@ -129,7 +135,7 @@ export async function getHeroSlides(): Promise<HeroSlide[]> {
     });
   }
 
-  return slides;
+  return slides ?? [];
 }
 
 /**
@@ -140,20 +146,26 @@ export async function getFeaturedPromotion() {
   const cacheKey = cacheService.cacheKeys.featuredPromotion();
 
   // Try cache first
-  let promo = await cacheService.get(cacheKey);
+  let promo = await cacheService.get<any>(cacheKey);
 
   if (!promo) {
     // Fetch most recent active promotion
     promo = await prisma.promotion.findFirst({
       where: {
         isActive: true,
-        OR: [
-          { startDate: null },
-          { startDate: { lte: new Date() } },
-        ],
-        OR: [
-          { endDate: null },
-          { endDate: { gte: new Date() } },
+        AND: [
+          {
+            OR: [
+              { startDate: null },
+              { startDate: { lte: new Date() } },
+            ],
+          },
+          {
+            OR: [
+              { endDate: null },
+              { endDate: { gte: new Date() } },
+            ],
+          },
         ],
       },
       orderBy: { createdAt: 'desc' },

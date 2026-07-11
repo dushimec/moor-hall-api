@@ -53,8 +53,12 @@ export async function createReservation(data: {
 }) {
   const normalizedGuestCount =
     typeof data.guestCount === 'string'
-      ? parseInt(data.guestCount, 10)
-      : data.guestCount;
+      ? Number.parseInt(data.guestCount, 10)
+      : typeof data.guestCount === 'number'
+        ? data.guestCount
+        : 0;
+
+  const guestCount = Number.isFinite(normalizedGuestCount) ? normalizedGuestCount : 0;
 
   return prisma.reservation.create({
     data: {
@@ -62,7 +66,7 @@ export async function createReservation(data: {
       phoneNumber: data.phoneNumber,
       reservationDate: new Date(data.reservationDate),
       reservationTime: data.reservationTime,
-      guestCount: Number.isNaN(normalizedGuestCount) ? data.guestCount : normalizedGuestCount,
+      guestCount,
       status: (data.status as any) || 'PENDING',
       notes: data.notes,
     },

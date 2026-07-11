@@ -54,7 +54,7 @@ export const getHeroSlides = asyncHandler(async (req: Request, res: Response) =>
 
   return res.json(
     apiResponse.success(slides, 'Hero slides retrieved successfully', {
-      slideCount: slides.length,
+      slideCount: Array.isArray(slides) ? slides.length : 0,
     })
   );
 });

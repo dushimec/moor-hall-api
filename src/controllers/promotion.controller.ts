@@ -75,7 +75,7 @@ export const getPublicPromotions = asyncHandler(async (req: Request, res: Respon
 
   return res.json(
     apiResponse.success(promotions, 'Active promotions retrieved successfully', {
-      count: promotions.length,
+      count: Array.isArray(promotions) ? promotions.length : 0,
     })
   );
 });

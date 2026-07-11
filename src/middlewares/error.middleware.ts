@@ -15,16 +15,13 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  logger.error(
-    {
-      message: err.message,
-      stack: err.stack,
-      url: req.url,
-      method: req.method,
-      requestId: req.requestId,
-    },
-    'Unhandled error'
-  );
+  logger.error('Unhandled error', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    requestId: req.requestId,
+  });
 
   if (res.headersSent) {
     return next(err);
