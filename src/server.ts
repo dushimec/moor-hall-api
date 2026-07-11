@@ -22,7 +22,7 @@ export const createApp = (): express.Application => {
     res.send('Welcome to the MoorHall API');
   });
 
-  app.get('/health', async (_req, res) => {
+  app.get('/ok', async (_req, res) => {
     try {
       const health = await checkHealth();
       const httpStatus =
